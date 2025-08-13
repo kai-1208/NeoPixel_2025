@@ -42,7 +42,7 @@ void handleCommLost() {
 void handleNormal() {
     // 白のウェーブ
     const float WAVE_SPEED = 240.0;     // 波の移動速度（数値を大きくすると遅くなる）
-    const float WAVE_LENGTH = 5.0;    // 波長（数値を大きくすると山の間隔が広がる）
+    const float WAVE_LENGTH = 7.0;    // 波長（数値を大きくすると山の間隔が広がる）
     const float WAVE_SHARPNESS = 6.0;  // 波の鋭さ（数値を大きくすると山が鋭くなり、谷が広がる）
 
     for (int i = 0; i < NUM_LEDS; i++) {
