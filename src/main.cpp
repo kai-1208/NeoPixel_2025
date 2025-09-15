@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-#define NUM_LEDS 22 // neopixelの数
+#define NUM_LEDS 31 // neopixelの数
 #define DATA_PIN 6 // arduinoのd6ピン
 #define BRIGHTNESS 100 // LEDの最大輝度(0-255)
 
