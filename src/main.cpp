@@ -159,115 +159,16 @@ void handleSemiAuto() {
  * @brief 赤色点灯
  */
 void handleHighSpeed() {
-    // --- 鼓動の見た目を調整する定数 ---
-    const unsigned long BEAT_CYCLE_MS = 1200; // 1回の鼓動サイクル全体の時間 (ミリ秒)
-
-    // --- 1回目の鼓動 (大きく「どくん」) ---
-    const unsigned long FIRST_BEAT_START = 0;
-    const unsigned long FIRST_BEAT_END = 400; // ★余韻のために少し時間を長く
-    const unsigned long FIRST_BEAT_FADE_IN_MS = 60; // ★急速に明るくなる時間
-    const uint8_t FIRST_BEAT_BRIGHTNESS = 200;
-
-    // --- 2回目の鼓動 (小さく「どくん」) ---
-    const unsigned long SECOND_BEAT_START = 300;
-    const unsigned long SECOND_BEAT_END = 900; // ★余韻のために少し時間を長く
-    const unsigned long SECOND_BEAT_FADE_IN_MS = 50; // ★急速に明るくなる時間
-    const uint8_t SECOND_BEAT_BRIGHTNESS = 100;
-
-    // 1. 現在の時刻をサイクル時間で割った余りを求める
-    unsigned long timeInCycle = millis() % BEAT_CYCLE_MS;
-
-    uint8_t brightness = 0; // 基本は消灯
-
-    // 2. 現在の時刻がどの区間にあるかを判断する
-    if (timeInCycle >= FIRST_BEAT_START && timeInCycle < FIRST_BEAT_END) {
-        // --- 1回目の鼓動の処理 ---
-        unsigned long peakTime = FIRST_BEAT_START + FIRST_BEAT_FADE_IN_MS;
-        
-        if (timeInCycle < peakTime) {
-            // ★急速に明るくなっていく区間
-            brightness = map(timeInCycle, FIRST_BEAT_START, peakTime, 0, FIRST_BEAT_BRIGHTNESS);
-        } else {
-            // ★ゆっくりと暗くなっていく区間（余韻）
-            brightness = map(timeInCycle, peakTime, FIRST_BEAT_END, FIRST_BEAT_BRIGHTNESS, 0);
-        }
-
-    } else if (timeInCycle >= SECOND_BEAT_START && timeInCycle < SECOND_BEAT_END) {
-        // --- 2回目の鼓動の処理 ---
-        unsigned long peakTime = SECOND_BEAT_START + SECOND_BEAT_FADE_IN_MS;
-
-        if (timeInCycle < peakTime) {
-            // ★急速に明るくなっていく区間
-            brightness = map(timeInCycle, SECOND_BEAT_START, peakTime, 0, SECOND_BEAT_BRIGHTNESS);
-        } else {
-            // ★ゆっくりと暗くなっていく区間（余韻）
-            brightness = map(timeInCycle, peakTime, SECOND_BEAT_END, SECOND_BEAT_BRIGHTNESS, 0);
-        }
-    }
-
-    // 3. 計算した明るさを全てのLEDに適用
     fill_solid(leds, NUM_LEDS, CRGB::Red);
     FastLED.show();
-    // fill_solid(leds, NUM_LEDS, CRGB::Red);
-    // FastLED.show();
 }
 
 /**
  * @brief 青色点灯
  */
 void handleLowSpeed() {
-    // --- 鼓動の見た目を調整する定数 ---
-    const unsigned long BEAT_CYCLE_MS = 1200; // 1回の鼓動サイクル全体の時間 (ミリ秒)
-
-    // --- 1回目の鼓動 (大きく「どくん」) ---
-    const unsigned long FIRST_BEAT_START = 0;
-    const unsigned long FIRST_BEAT_END = 400; // ★余韻のために少し時間を長く
-    const unsigned long FIRST_BEAT_FADE_IN_MS = 60; // ★急速に明るくなる時間
-    const uint8_t FIRST_BEAT_BRIGHTNESS = 200;
-
-    // --- 2回目の鼓動 (小さく「どくん」) ---
-    const unsigned long SECOND_BEAT_START = 300;
-    const unsigned long SECOND_BEAT_END = 900; // ★余韻のために少し時間を長く
-    const unsigned long SECOND_BEAT_FADE_IN_MS = 50; // ★急速に明るくなる時間
-    const uint8_t SECOND_BEAT_BRIGHTNESS = 100;
-
-    // 1. 現在の時刻をサイクル時間で割った余りを求める
-    unsigned long timeInCycle = millis() % BEAT_CYCLE_MS;
-
-    uint8_t brightness = 0; // 基本は消灯
-
-    // 2. 現在の時刻がどの区間にあるかを判断する
-    if (timeInCycle >= FIRST_BEAT_START && timeInCycle < FIRST_BEAT_END) {
-        // --- 1回目の鼓動の処理 ---
-        unsigned long peakTime = FIRST_BEAT_START + FIRST_BEAT_FADE_IN_MS;
-        
-        if (timeInCycle < peakTime) {
-            // ★急速に明るくなっていく区間
-            brightness = map(timeInCycle, FIRST_BEAT_START, peakTime, 0, FIRST_BEAT_BRIGHTNESS);
-        } else {
-            // ★ゆっくりと暗くなっていく区間（余韻）
-            brightness = map(timeInCycle, peakTime, FIRST_BEAT_END, FIRST_BEAT_BRIGHTNESS, 0);
-        }
-
-    } else if (timeInCycle >= SECOND_BEAT_START && timeInCycle < SECOND_BEAT_END) {
-        // --- 2回目の鼓動の処理 ---
-        unsigned long peakTime = SECOND_BEAT_START + SECOND_BEAT_FADE_IN_MS;
-
-        if (timeInCycle < peakTime) {
-            // ★急速に明るくなっていく区間
-            brightness = map(timeInCycle, SECOND_BEAT_START, peakTime, 0, SECOND_BEAT_BRIGHTNESS);
-        } else {
-            // ★ゆっくりと暗くなっていく区間（余韻）
-            brightness = map(timeInCycle, peakTime, SECOND_BEAT_END, SECOND_BEAT_BRIGHTNESS, 0);
-        }
-    }
-
-    // 3. 計算した明るさを全てのLEDに適用
     fill_solid(leds, NUM_LEDS, CRGB::Blue);
     FastLED.show();
-
-    // fill_solid(leds, NUM_LEDS, CRGB::Blue);
-    // FastLED.show();
 }
 
 /**
