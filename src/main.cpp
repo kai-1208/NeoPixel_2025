@@ -3,11 +3,12 @@
 
 #define NUM_LEDS 31 // neopixelの数
 #define DATA_PIN 6 // arduinoのd6ピン
-#define BRIGHTNESS 255 // LEDの最大輝度(0-255)
+#define BRIGHTNESS 200 // LEDの最大輝度(0-255)
 
 CRGB leds[NUM_LEDS];
 
 enum LedState {
+    OFF,            // 0.LEDオフ : 消灯
     COMM_LOST,      // 1.通信遮断 : 赤点滅
     NORMAL,         // 2.通常(通信OK) : 白グラデーション
     AUTO,           // 3.自動 : 黄色
@@ -21,6 +22,14 @@ LedState currentState = NORMAL;
 
 unsigned long previousMillis = 0;
 bool blinkState = false;
+
+/**
+ * @brief 消灯
+*/
+void handleOff() {
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    FastLED.show();
+}
 
 /**
  * @brief 赤点滅(500ms間隔)
@@ -293,6 +302,7 @@ void checkSerialInput() {
         LedState previousState = currentState;
 
         switch (command) {
+            case '0': currentState = OFF;         break;
             case '1': currentState = COMM_LOST;   break;
             case '2': currentState = NORMAL;      break;
             case '3': currentState = AUTO;        break;
@@ -328,6 +338,7 @@ void loop() {
     checkSerialInput();
 
     switch (currentState) {
+        case OFF:           handleOff();          break;
         case COMM_LOST:     handleCommLost();     break;
         case NORMAL:        handleNormal();       break;
         case AUTO:          handleAuto();         break;
