@@ -331,7 +331,7 @@ void setup() {
     FastLED.setBrightness(BRIGHTNESS);
 
     Serial.println("Hello, world");
-    currentState = AUTO;
+    // currentState = LOW_SPEED;
 }
 
 void loop() {
