@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-#define NUM_LEDS 31 // neopixelの数
+#define NUM_LEDS 25 // neopixelの数
 #define DATA_PIN 6 // arduinoのd6ピン
 #define BRIGHTNESS 200 // LEDの最大輝度(0-255)
 
@@ -136,12 +136,63 @@ void handleNormal() {
  * @brief 黄色点灯
  */
 void handleAuto() {
-    fill_solid(leds, NUM_LEDS, CRGB::Yellow);
+    // --- 鼓動の見た目を調整する定数 ---
+    const unsigned long BEAT_CYCLE_MS = 1200; // 1回の鼓動サイクル全体の時間 (ミリ秒)
+
+    // --- 1回目の鼓動 (大きく「どくん」) ---
+    const unsigned long FIRST_BEAT_START = 0;
+    const unsigned long FIRST_BEAT_END = 400; // ★余韻のために少し時間を長く
+    const unsigned long FIRST_BEAT_FADE_IN_MS = 60; // ★急速に明るくなる時間
+    const uint8_t FIRST_BEAT_BRIGHTNESS = 200;
+
+    // --- 2回目の鼓動 (小さく「どくん」) ---
+    const unsigned long SECOND_BEAT_START = 300;
+    const unsigned long SECOND_BEAT_END = 900; // ★余韻のために少し時間を長く
+    const unsigned long SECOND_BEAT_FADE_IN_MS = 50; // ★急速に明るくなる時間
+    const uint8_t SECOND_BEAT_BRIGHTNESS = 100;
+
+    // 1. 現在の時刻をサイクル時間で割った余りを求める
+    unsigned long timeInCycle = millis() % BEAT_CYCLE_MS;
+
+    uint8_t brightness = 0; // 基本は消灯
+
+    // 2. 現在の時刻がどの区間にあるかを判断する
+    if (timeInCycle >= FIRST_BEAT_START && timeInCycle < FIRST_BEAT_END) {
+        // --- 1回目の鼓動の処理 ---
+        unsigned long peakTime = FIRST_BEAT_START + FIRST_BEAT_FADE_IN_MS;
+        
+        if (timeInCycle < peakTime) {
+            // ★急速に明るくなっていく区間
+            brightness = map(timeInCycle, FIRST_BEAT_START, peakTime, 0, FIRST_BEAT_BRIGHTNESS);
+        } else {
+            // ★ゆっくりと暗くなっていく区間（余韻）
+            brightness = map(timeInCycle, peakTime, FIRST_BEAT_END, FIRST_BEAT_BRIGHTNESS, 0);
+        }
+
+    } else if (timeInCycle >= SECOND_BEAT_START && timeInCycle < SECOND_BEAT_END) {
+        // --- 2回目の鼓動の処理 ---
+        unsigned long peakTime = SECOND_BEAT_START + SECOND_BEAT_FADE_IN_MS;
+
+        if (timeInCycle < peakTime) {
+            // ★急速に明るくなっていく区間
+            brightness = map(timeInCycle, SECOND_BEAT_START, peakTime, 0, SECOND_BEAT_BRIGHTNESS);
+        } else {
+            // ★ゆっくりと暗くなっていく区間（余韻）
+            brightness = map(timeInCycle, peakTime, SECOND_BEAT_END, SECOND_BEAT_BRIGHTNESS, 0);
+        }
+    }
+
+    // 3. 計算した明るさを全てのLEDに適用
+    fill_solid(leds, NUM_LEDS, CRGB(brightness, brightness, 0));
     FastLED.show();
+
+
+    // fill_solid(leds, NUM_LEDS, CRGB::Yellow);
+    // FastLED.show();
 }
 
 /**
- * @brief 黄色点滅(500ms間隔)
+ * @brief 黄色点滅(500ms間隔) tabun nakunaru
  */
 void handleSemiAuto() {
     unsigned long currentMillis = millis();
@@ -156,18 +207,66 @@ void handleSemiAuto() {
 }
 
 /**
- * @brief 赤色点灯
+ * @brief 赤色の光が片道に流れる（スキャナー）
  */
 void handleHighSpeed() {
-    fill_solid(leds, NUM_LEDS, CRGB::Red);
+    // --- 見た目を調整する定数 ---
+    const uint8_t FADE_RATE = 5;   // 残像の消える速さ (0-255, 大きいほど速く消える)
+    const uint8_t BPM = 140;         // 光が流れる速さ (Beats Per Minute)
+
+    // 1. 全てのLEDを少しずつ暗くしていく（フェードアウト効果で残像を作る）
+    for (int i = 0; i < NUM_LEDS; i++) {
+        leds[i].nscale8(255 - FADE_RATE);
+    }
+    
+    // 2. 時間に応じて0から255まで単調に増加する値を取得する
+    uint8_t beat = beat8(BPM);
+
+    // 3. その値(0-255)を、LEDの位置(0 ～ NUM_LEDS-1)の範囲に変換(マッピング)する
+    int currentPos = map(beat, 0, 255, 0, NUM_LEDS - 1);
+
+
+    // 4. 計算した位置のLEDを赤色で上書き点灯する
+    leds[currentPos] = CRGB::Red;
+
     FastLED.show();
 }
 
 /**
- * @brief 青色点灯
+ * @brief N個の青い光が等間隔で流れる（時間制御による超低速フェード）
  */
 void handleLowSpeed() {
-    fill_solid(leds, NUM_LEDS, CRGB::Blue);
+    const int NUM_POINTS = 1; // 流れる数を設定
+
+    // --- 見た目を調整する定数 ---
+    const uint8_t BPM = 30;        // 光が流れる速さ
+
+    // 消灯処理を行う「間隔」（ミリ秒）。この数値を大きくするほど、消灯は遅くなる
+    const int FADE_INTERVAL_MS = 12; 
+    
+    // 一回の消灯処理でどれだけ暗くするか。数値を大きくすると、カクカクと消えるようになる
+    const uint8_t FADE_AMOUNT = 5;
+
+    // 1.「FADE_INTERVAL_MS」で指定した時間ごとに、中の処理を1回だけ実行する
+    EVERY_N_MILLISECONDS(FADE_INTERVAL_MS) {
+        for (int i = 0; i < NUM_LEDS; i++) {
+            leds[i].nscale8(255 - FADE_AMOUNT);
+        }
+    }
+    
+    // 2. 先頭になる光の基準位置を計算する (ここは変更なし)
+    uint8_t beat = beat8(BPM);
+    int leader_pos = map(beat, 0, 255, 0, NUM_LEDS);
+
+    // 3. 光と光の間隔を計算する
+    int spacing = NUM_LEDS / NUM_POINTS;
+
+    // 4. ループを使って、N個の光をそれぞれ計算して点灯させる
+    for (int i = 0; i < NUM_POINTS; i++) {
+        int current_pos = (leader_pos + i * spacing) % NUM_LEDS;
+        leds[current_pos] = CRGB::Blue;
+    }
+
     FastLED.show();
 }
 
@@ -232,7 +331,7 @@ void setup() {
     FastLED.setBrightness(BRIGHTNESS);
 
     Serial.println("Hello, world");
-    // currentState = NORMAL;
+    currentState = AUTO;
 }
 
 void loop() {
